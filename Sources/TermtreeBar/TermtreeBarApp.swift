@@ -102,20 +102,28 @@ struct ContentView: View {
         }
     }
 
+    @State private var outputVersion = 0
+
     private var outputArea: some View {
-        ScrollView([.vertical, .horizontal]) {
-            Text(output)
-                .font(.system(size: 11, design: .monospaced))
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .textSelection(.enabled)
-                .padding(10)
+        ScrollViewReader { proxy in
+            ScrollView([.vertical, .horizontal]) {
+                Text(output)
+                    .font(.system(size: 11, design: .monospaced))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .textSelection(.enabled)
+                    .padding(10)
+                    .id("top")
+            }
+            .background(Color(white: 0.08))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color.white.opacity(0.06), lineWidth: 1)
+            )
+            .onChange(of: outputVersion) { _, _ in
+                proxy.scrollTo("top", anchor: .top)
+            }
         }
-        .background(Color(white: 0.08))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.white.opacity(0.06), lineWidth: 1)
-        )
     }
 
     private var footer: some View {
@@ -161,6 +169,7 @@ struct ContentView: View {
                 output = parsed
                 lastDuration = elapsed
                 isRunning = false
+                outputVersion &+= 1
             }
         }
     }

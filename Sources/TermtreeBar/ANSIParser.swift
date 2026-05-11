@@ -1,9 +1,21 @@
 import SwiftUI
 
 enum ANSIParser {
-    /// Collapse \r progress updates: keep only what follows the last \r on each line.
+    /// Clean script(1)-wrapped output before parsing.
+    /// macOS `script` emits CRLF line endings *and* prepends a ^D (EOT) byte
+    /// when -q is used. Plus termtree's progress meter uses bare \r overwrites.
+    /// Order matters: normalize CRLF → LF first, then collapse remaining \r.
     static func stripCarriageReturns(_ text: String) -> String {
-        text.components(separatedBy: "\n").map { line -> String in
+        var t = text
+        // Drop the leading EOT script emits with -q (and any other C0 noise).
+        while let first = t.first, first == "\u{0004}" || first == "\u{0008}" {
+            t.removeFirst()
+        }
+        // Normalize CRLF (script) → LF
+        t = t.replacingOccurrences(of: "\r\n", with: "\n")
+        // Now bare \r means "overwrite this line" (progress meter). Keep only
+        // what follows the last bare \r within each line.
+        return t.components(separatedBy: "\n").map { line -> String in
             if let lastReturn = line.range(of: "\r", options: .backwards) {
                 return String(line[lastReturn.upperBound...])
             }
