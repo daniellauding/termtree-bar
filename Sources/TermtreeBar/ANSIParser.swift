@@ -25,13 +25,23 @@ enum ANSIParser {
         func flush() {
             guard !current.isEmpty else { return }
             var piece = AttributedString(current)
+            // Always set foreground explicitly. SwiftUI's default "primary"
+            // doesn't always resolve correctly inside an AttributedString that
+            // mixes attributes, and we draw on a near-black background so we
+            // need light text guaranteed.
             if isDim {
-                piece.foregroundColor = .secondary
+                piece.foregroundColor = Color(white: 0.55)
             } else if let c = fg {
                 piece.foregroundColor = c
+            } else {
+                piece.foregroundColor = Color(white: 0.92)
             }
+            // Bold: use a bold monospaced font for the segment. We deliberately
+            // avoid `inlinePresentationIntent = .stronglyEmphasized` — on macOS
+            // SwiftUI renders that with a light "code block" background which
+            // is unreadable against our dark output area.
             if isBold {
-                piece.inlinePresentationIntent = .stronglyEmphasized
+                piece.font = .system(size: 11, weight: .bold, design: .monospaced)
             }
             result += piece
             current = ""
